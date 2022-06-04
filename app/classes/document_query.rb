@@ -35,10 +35,19 @@ class DocumentQuery
     if query.present?
       set_highlight_options
       search.suggest(:suggestion, suggestion_hash)
+      search.aggregation(:tags, aggregation_hash)
     end
     build_search_query
     search.explain true if Rails.logger.debug? #scoring details
     search
+  end
+
+  def aggregation_hash
+    {
+      terms: {
+        field: 'tags'
+      }
+    }
   end
 
   def suggestion_hash
