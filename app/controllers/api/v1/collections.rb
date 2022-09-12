@@ -132,7 +132,10 @@ module Api
           %i(tags ignore_tags include).each { |key| params[key] = params[key].extract_array if params[key].present? }
           document_search = DocumentSearch.new(params.merge(handles: valid_collections.collect(&:id)))
           document_search_results = document_search.search
-          metadata_hash = { total: document_search_results.total, offset: document_search_results.offset, suggestion: document_search_results.suggestion }
+          metadata_hash = { total: document_search_results.total,
+                            offset: document_search_results.offset,
+                            suggestion: document_search_results.suggestion,
+                            aggregation: document_search_results.aggregations }
           { status: 200, developer_message: "OK", metadata: metadata_hash, results: document_search_results.results }
         end
 
