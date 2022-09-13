@@ -8,7 +8,7 @@ class DocumentSearchResults
     @offset = offset
     @results = extract_hits(result['hits']['hits'])
     @suggestion = extract_suggestion(result['suggest'])
-    @aggregations = extract_aggregations(result['aggregations']) if result['aggregations']
+    @aggregations = result['aggregations'] if result['aggregations']
   end
 
   def override_suggestion(suggestion)
@@ -21,14 +21,6 @@ class DocumentSearchResults
     return unless suggest && total.zero?
 
     suggest['suggestion'].first['options'].first.except('score')
-  rescue NoMethodError
-    nil
-  end
-
-  def extract_aggregations(aggregations)
-    return unless aggregations
-
-    aggregations['tags']['buckets']
   rescue NoMethodError
     nil
   end

@@ -51,17 +51,19 @@ class DocumentQuery
     if query.present?
       set_highlight_options
       search.suggest(:suggestion, suggestion_hash)
-      search.aggregation(:tags, aggregation_hash)
+      search.aggregation(:audience, aggregation_hash('audience'))
+      search.aggregation(:content_type, aggregation_hash('content_type'))
+      search.aggregation(:tags, aggregation_hash('tags'))
     end
     build_search_query
     search.explain true if Rails.logger.debug? #scoring details
     search
   end
 
-  def aggregation_hash
+  def aggregation_hash(facet_field)
     {
       terms: {
-        field: 'tags'
+        field: facet_field
       }
     }
   end
