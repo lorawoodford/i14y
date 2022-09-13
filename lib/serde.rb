@@ -15,6 +15,8 @@ module Serde
     hash.merge!(uri_params_hash(hash[:path])) if hash[:path].present?
     hash[:tags] = hash[:tags].extract_array if hash[:tags].present?
     hash[:searchgov_custom1] = hash[:searchgov_custom1].extract_array if hash[:searchgov_custom1].present?
+    hash[:searchgov_custom2] = hash[:searchgov_custom2].extract_array if hash[:searchgov_custom2].present?
+    hash[:searchgov_custom3] = hash[:searchgov_custom3].extract_array if hash[:searchgov_custom3].present?
     hash[:updated_at] = Time.now.utc
     hash
   end

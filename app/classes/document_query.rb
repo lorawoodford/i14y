@@ -14,18 +14,34 @@ class DocumentQuery
     they this to was will with
   ]
 
-  attr_reader :language, :site_filters, :tags, :ignore_tags, :date_range,
-              :included_sites, :excluded_sites
+  attr_reader :audience,
+              :content_type,
+              :date_range,
+              :excluded_sites,
+              :ignore_tags,
+              :included_sites,
+              :language,
+              :searchgov_custom1,
+              :searchgov_custom2,
+              :searchgov_custom3,
+              :site_filters,
+              :tags
   attr_accessor :query, :search
 
   def initialize(options)
     @options = options
+    @audience = options[:audience]
+    @content_type = options[:content_type]
     @language = options[:language] || 'en'
+    @searchgov_custom1 = options[:searchgov_custom1]
+    @searchgov_custom2 = options[:searchgov_custom2]
+    @searchgov_custom3 = options[:searchgov_custom3]
     @tags = options[:tags]
     @ignore_tags = options[:ignore_tags]
     @date_range = { gte: @options[:min_timestamp], lt: @options[:max_timestamp] }
     @search = Search.new
-    @included_sites, @excluded_sites = [], []
+    @included_sites = []
+    @excluded_sites = []
     parse_query(options[:query]) if options[:query]
   end
 
@@ -236,7 +252,12 @@ class DocumentQuery
 
             filter do
               bool do
+                must { term audience: doc_query.audience } if doc_query.audience.present?
+                must { term content_type: doc_query.content_type } if doc_query.content_type.present?
                 must { term language: doc_query.language } if doc_query.language.present?
+                must { term searchgov_custom1: doc_query.searchgov_custom1 } if doc_query.searchgov_custom1.present?
+                must { term searchgov_custom2: doc_query.searchgov_custom2 } if doc_query.searchgov_custom2.present?
+                must { term searchgov_custom3: doc_query.searchgov_custom3 } if doc_query.searchgov_custom3.present?
 
                 if doc_query.included_sites.any?
                   minimum_should_match 1
