@@ -21,6 +21,7 @@ class DocumentQuery
               :ignore_tags,
               :included_sites,
               :language,
+              :mime_type,
               :searchgov_custom1,
               :searchgov_custom2,
               :searchgov_custom3,
@@ -33,6 +34,7 @@ class DocumentQuery
     @audience = options[:audience]
     @content_type = options[:content_type]
     @language = options[:language] || 'en'
+    @mime_type = options[:mime_type]
     @searchgov_custom1 = options[:searchgov_custom1]
     @searchgov_custom2 = options[:searchgov_custom2]
     @searchgov_custom3 = options[:searchgov_custom3]
@@ -53,6 +55,10 @@ class DocumentQuery
       search.suggest(:suggestion, suggestion_hash)
       search.aggregation(:audience, aggregation_hash('audience'))
       search.aggregation(:content_type, aggregation_hash('content_type'))
+      search.aggregation(:mime_type, aggregation_hash('mime_type'))
+      search.aggregation(:searchgov_custom1, aggregation_hash('searchgov_custom1'))
+      search.aggregation(:searchgov_custom2, aggregation_hash('searchgov_custom2'))
+      search.aggregation(:searchgov_custom3, aggregation_hash('searchgov_custom3'))
       search.aggregation(:tags, aggregation_hash('tags'))
     end
     build_search_query
@@ -257,6 +263,7 @@ class DocumentQuery
                 must { term audience: doc_query.audience } if doc_query.audience.present?
                 must { term content_type: doc_query.content_type } if doc_query.content_type.present?
                 must { term language: doc_query.language } if doc_query.language.present?
+                must { term mime_type: doc_query.mime_type } if doc_query.mime_type.present?
                 must { term searchgov_custom1: doc_query.searchgov_custom1 } if doc_query.searchgov_custom1.present?
                 must { term searchgov_custom2: doc_query.searchgov_custom2 } if doc_query.searchgov_custom2.present?
                 must { term searchgov_custom3: doc_query.searchgov_custom3 } if doc_query.searchgov_custom3.present?
