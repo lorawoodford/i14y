@@ -288,6 +288,26 @@ describe DocumentSearch do
       end
     end
 
+    context 'when the query matches audience' do
+      let(:document_search) do
+        described_class.new(search_options.merge(query: 'everyone', include: ['audience']))
+      end
+
+      before do
+        common_params = { language: 'en', created: DateTime.now, path: 'http://www.agency.gov/page1.html',
+                          title: 'Document with an audience',
+                          description: 'Document description.' }
+        create_documents([
+                           common_params.merge(audience: 'everyone')
+                         ])
+      end
+
+      it 'returns those documents' do
+        expect(document_search_results.total).to eq(1)
+        expect(document_search_results.results.first['audience']).to eq('everyone')
+      end
+    end
+
     context 'enough low frequency and high frequency words are found' do
       before do
         create_documents([
