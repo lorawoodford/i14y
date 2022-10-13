@@ -1,13 +1,14 @@
 # frozen_string_literal: true
 
 class DocumentSearchResults
-  attr_reader :total, :offset, :results, :suggestion
+  attr_reader :total, :offset, :results, :suggestion, :aggregations
 
   def initialize(result, offset = 0)
     @total = result['hits']['total']
     @offset = offset
     @results = extract_hits(result['hits']['hits'])
     @suggestion = extract_suggestion(result['suggest'])
+    @aggregations = result['aggregations'] if result['aggregations']
   end
 
   def override_suggestion(suggestion)

@@ -6,13 +6,21 @@ class DocumentQuery
   HIGHLIGHT_OPTIONS = {
     pre_tags: ["\ue000"],
     post_tags: ["\ue001"]
-  }
+  }.freeze
 
   DEFAULT_STOPWORDS = %w[
     a an and are as at be but by for if in into is it
     no not of on or such that the their then there these
     they this to was will with
-  ]
+  ].freeze
+
+  FACET_FIELDS = %i[audience
+                    content_type
+                    mime_type
+                    searchgov_custom1
+                    searchgov_custom2
+                    searchgov_custom3
+                    tags].freeze
 
   attr_reader :language, :site_filters, :tags, :ignore_tags, :date_range,
               :included_sites, :excluded_sites
@@ -30,15 +38,30 @@ class DocumentQuery
   end
 
   def body
-    search.source source_fields
-    search.sort { by :changed, order: 'desc' } if @options[:sort_by_date]
+    search.source(source_fields)
+    search.sort { by(:changed, order: 'desc') } if @options[:sort_by_date]
     if query.present?
-      set_highlight_options
-      search.suggest(:suggestion, suggestion_hash)
+      query_options
     end
     build_search_query
-    search.explain true if Rails.logger.debug? #scoring details
+    search.explain(true) if Rails.logger.debug? # scoring details
     search
+  end
+
+  def query_options
+    set_highlight_options
+    search.suggest(:suggestion, suggestion_hash)
+    FACET_FIELDS.each do |facet|
+      search.aggregation(facet, aggregation_hash(facet))
+    end
+  end
+
+  def aggregation_hash(facet_field)
+    {
+      terms: {
+        field: facet_field
+      }
+    }
   end
 
   def suggestion_hash
@@ -136,9 +159,9 @@ class DocumentQuery
   def set_highlight_options
     highlight_fields = highlight_fields_hash
     search.highlight do
-      pre_tags HIGHLIGHT_OPTIONS[:pre_tags]
-      post_tags HIGHLIGHT_OPTIONS[:post_tags]
-      fields highlight_fields
+      pre_tags(HIGHLIGHT_OPTIONS[:pre_tags])
+      post_tags(HIGHLIGHT_OPTIONS[:post_tags])
+      fields(highlight_fields)
     end
   end
 
@@ -182,7 +205,7 @@ class DocumentQuery
 
     search.query do
       function_score do
-        functions doc_query.functions
+        functions(doc_query.functions)
 
         query do
           bool do
@@ -190,8 +213,8 @@ class DocumentQuery
               must do
                 bool do
                   #prefer bigram matches
-                  should { match bigrams: { operator: 'and', query: doc_query.query } }
-                  should { term  promote: true }
+                  should { match(bigrams: { operator: 'and', query: doc_query.query }) }
+                  should { term( promote: true) }
 
                   #prefer_word_form_matches
                   must do
@@ -200,8 +223,8 @@ class DocumentQuery
                         bool do
                           must do
                             simple_query_string do
-                              query doc_query.query
-                              fields doc_query.boosted_fields
+                              query(doc_query.query)
+                              fields(doc_query.boosted_fields)
                             end
                           end
 
@@ -217,8 +240,8 @@ class DocumentQuery
                         end
                       end
 
-                      should { match basename: { operator: 'and', query: doc_query.query } }
-                      should { match tags:     { operator: 'and', query: doc_query.query.downcase } }
+                      should { match(basename: { operator: 'and', query: doc_query.query }) }
+                      should { match(tags:     { operator: 'and', query: doc_query.query.downcase }) }
                     end
                   end
                 end
@@ -227,36 +250,36 @@ class DocumentQuery
 
             filter do
               bool do
-                must { term language: doc_query.language } if doc_query.language.present?
+                must { term(language: doc_query.language) } if doc_query.language.present?
 
                 if doc_query.included_sites.any?
-                  minimum_should_match 1
+                  minimum_should_match(1)
 
                   doc_query.included_sites.each do |site_filter|
                     should do
                       bool do
-                        must { term domain_name: site_filter.domain_name }
-                        must { term url_path: site_filter.url_path } if site_filter.url_path.present?
+                        must { term(domain_name: site_filter.domain_name) }
+                        must { term(url_path: site_filter.url_path) } if site_filter.url_path.present?
                       end
                     end
                   end
                 end
 
-                doc_query.tags.each { |tag| must { term tags: tag } } if doc_query.tags.present?
+                doc_query.tags.each { |tag| must { term(tags: tag) } } if doc_query.tags.present?
 
-                must { range changed: doc_query.date_range } if doc_query.timestamp_filters_present?
+                must { range(changed: doc_query.date_range) } if doc_query.timestamp_filters_present?
 
                 if doc_query.ignore_tags.present?
                   must_not do
-                    terms tags: doc_query.ignore_tags
+                    terms(tags: doc_query.ignore_tags)
                   end
                 end
 
                 doc_query.excluded_sites.each do |site_filter|
                   if site_filter.url_path.present?
-                    must_not { regexp path: { value: "https?:\/\/#{site_filter.domain_name}#{site_filter.url_path}/.*" } }
+                    must_not { regexp(path: { value: "https?:\/\/#{site_filter.domain_name}#{site_filter.url_path}/.*" }) }
                   else
-                    must_not { term domain_name: site_filter.domain_name }
+                    must_not { term(domain_name: site_filter.domain_name) }
                   end
                 end
               end
