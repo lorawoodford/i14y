@@ -26,12 +26,19 @@ class DocumentQuery
                          changed].freeze
 
   attr_reader :language, :site_filters, :tags, :ignore_tags, :date_range,
-              :included_sites, :excluded_sites
+              :included_sites, :excluded_sites, :audience, :content_type,
+              :mime_type, :searchgov_custom1, :searchgov_custom2, :searchgov_custom3
   attr_accessor :query, :search
 
   def initialize(options)
     @options = options
     @language = options[:language] || 'en'
+    @audience = options[:audience]
+    @content_type = options[:content_type]
+    @mime_type = options[:mime_type]
+    @searchgov_custom1 = options[:searchgov_custom1]
+    @searchgov_custom2 = options[:searchgov_custom2]
+    @searchgov_custom3 = options[:searchgov_custom3]
     @tags = options[:tags]
     @ignore_tags = options[:ignore_tags]
     @date_range = { gte: @options[:min_timestamp], lt: @options[:max_timestamp] }
@@ -292,6 +299,12 @@ class DocumentQuery
             filter do
               bool do
                 must { term(language: doc_query.language) } if doc_query.language.present?
+                must { term(audience: doc_query.audience) } if doc_query.audience.present?
+                must { term(content_type: doc_query.content_type) } if doc_query.content_type.present?
+                must { term(mime_type: doc_query.mime_type) } if doc_query.mime_type.present?
+                must { term(searchgov_custom1: doc_query.searchgov_custom1) } if doc_query.searchgov_custom1.present?
+                must { term(searchgov_custom2: doc_query.searchgov_custom2) } if doc_query.searchgov_custom2.present?
+                must { term(searchgov_custom3: doc_query.searchgov_custom3) } if doc_query.searchgov_custom3.present?
 
                 if doc_query.included_sites.any?
                   minimum_should_match(1)
