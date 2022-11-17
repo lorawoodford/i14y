@@ -288,26 +288,6 @@ describe DocumentSearch do
       end
     end
 
-    context 'when the query matches audience' do
-      let(:document_search) do
-        described_class.new(search_options.merge(query: 'everyone', include: ['audience']))
-      end
-
-      before do
-        common_params = { language: 'en', created: DateTime.now, path: 'http://www.agency.gov/page1.html',
-                          title: 'Document with an audience',
-                          description: 'Document description.' }
-        create_documents([
-                           common_params.merge(audience: 'everyone')
-                         ])
-      end
-
-      it 'returns those documents' do
-        expect(document_search_results.total).to eq(1)
-        expect(document_search_results.results.first['audience']).to eq('everyone')
-      end
-    end
-
     context 'enough low frequency and high frequency words are found' do
       before do
         create_documents([
@@ -515,13 +495,14 @@ describe DocumentSearch do
                          ])
       end
 
+      let(:search_options) do
+        { handles: handles, language: :en, query: query, size: 10, offset: 0, include: %w[audience
+                                                                                          content_type
+                                                                                          mime_type] }
+      end
+
       context "when filtering by #{field}" do
-        let(:document_search) do
-          described_class.new(search_options.merge("#{field}": content,
-                                                   include: %w[audience
-                                                               content_type
-                                                               mime_type]))
-        end
+        let(:document_search) { described_class.new(search_options.merge("#{field}": content)) }
 
         it 'returns matches' do
           expect(document_search_results.total).to eq(1)
@@ -531,6 +512,25 @@ describe DocumentSearch do
 
       context "when filtering by a partial #{field} term" do
         let(:document_search) { described_class.new(search_options.merge("#{field}": content.chop)) }
+
+        it 'does not return partially matching results' do
+          expect(document_search_results.total).to eq(0)
+        end
+      end
+
+      context 'when the query matches audience' do
+        let(:document_search) do
+          described_class.new(search_options.merge(query: 'everyone'))
+        end
+
+        it 'returns results matching that tag' do
+          expect(document_search_results.total).to eq(1)
+          expect(document_search_results.results.first['audience']).to eq('everyone')
+        end
+      end
+
+      context 'when the query partially matches audience' do
+        let(:document_search) { described_class.new(search_options.merge(query: 'one')) }
 
         it 'does not return partially matching results' do
           expect(document_search_results.total).to eq(0)
@@ -551,14 +551,17 @@ describe DocumentSearch do
                          ])
       end
 
+      let(:search_options) do
+        { handles: handles, language: :en, query: query, size: 10, offset: 0, include: %w[searchgov_custom1
+                                                                                          searchgov_custom2
+                                                                                          searchgov_custom3
+                                                                                          tags] }
+      end
+
       context "when filtering by one #{field} term" do
         let(:filter_value) { content.split(', ').sample(1) }
         let(:document_search) do
-          described_class.new(search_options.merge("#{field}": filter_value,
-                                                   include: %w[searchgov_custom1
-                                                               searchgov_custom2
-                                                               searchgov_custom3
-                                                               tags]))
+          described_class.new(search_options.merge("#{field}": filter_value))
         end
 
         it 'returns results matching that single term' do
@@ -579,16 +582,29 @@ describe DocumentSearch do
       context "when filtering by the entire #{field} array" do
         let(:filter_value) { content.split(', ') }
         let(:document_search) do
-          described_class.new(search_options.merge("#{field}": filter_value,
-                                                   include: %w[searchgov_custom1
-                                                               searchgov_custom2
-                                                               searchgov_custom3
-                                                               tags]))
+          described_class.new(search_options.merge("#{field}": filter_value))
         end
 
         it 'returns results matching the entire array' do
           expect(document_search_results.total).to eq(1)
           expect(document_search_results.results.first[field]).to eq(filter_value)
+        end
+      end
+
+      context "when the query matches a single #{field} term" do
+        let(:query) { content.split(', ').sample(1).first }
+
+        it 'returns results matching that field' do
+          expect(document_search_results.total).to eq(1)
+          expect(document_search_results.results.first[field]).to match(array_including(query))
+        end
+      end
+
+      context "when the query partially matches a #{field} term" do
+        let(:query) { content.split(', ').sample(1).first.chop }
+
+        it 'does not return partially matching results' do
+          expect(document_search_results.total).to eq(0)
         end
       end
     end
