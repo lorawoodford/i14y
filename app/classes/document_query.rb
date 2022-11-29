@@ -32,6 +32,7 @@ class DocumentQuery
               :excluded_sites,
               :ignore_tags,
               :included_sites,
+              :filetype_filters,
               :language,
               :mime_type,
               :searchgov_custom1,
@@ -49,6 +50,7 @@ class DocumentQuery
     @excluded_sites = []
     @ignore_tags = options[:ignore_tags]
     @included_sites = []
+    @filetype_filters = []
     @search = Search.new
     parse_filters
     parse_query(options[:query]) if options[:query]
@@ -153,6 +155,7 @@ class DocumentQuery
   def parse_query(query)
     site_params_parser = QueryParser.new(query)
     @site_filters = site_params_parser.site_filters
+    @filetype_filters = site_params_parser.filetype_filters
     @included_sites = @site_filters[:included_sites]
     @excluded_sites = @site_filters[:excluded_sites]
     @query = site_params_parser.stripped_query
@@ -324,6 +327,12 @@ class DocumentQuery
                         must { term url_path: site_filter.url_path } if site_filter.url_path.present?
                       end
                     end
+                  end
+                end
+
+                if doc_query.filetype_filters.any?
+                  doc_query.filetype_filters.each do |filetype_filter|
+                    must { term extension: filetype_filter }
                   end
                 end
 
