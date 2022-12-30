@@ -90,6 +90,10 @@ module Api
                    type: String,
                    allow_blank: false,
                    desc: 'Document description'
+          optional :image_url,
+                   type: String,
+                   allow_blank: false,
+                   desc: 'Document image_url'
           optional :language,
                    type: Symbol,
                    values: SUPPORTED_LOCALES,
@@ -172,6 +176,10 @@ module Api
                    type: String,
                    allow_blank: false,
                    desc: 'Document description'
+          optional :image_url,
+                   type: String,
+                   allow_blank: false,
+                   desc: 'Document image_url'
           optional :language,
                    type: Symbol,
                    values: SUPPORTED_LOCALES,
@@ -210,6 +218,7 @@ module Api
                           :description,
                           :document_id,
                           :handle,
+                          :image_url,
                           :language,
                           :mime_type,
                           :path,
