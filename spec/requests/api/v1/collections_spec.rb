@@ -252,26 +252,28 @@ describe Api::V1::Collections do
       let(:datetime) { DateTime.now.utc.to_s }
       let(:hash1) do
         { _id: 'a1',
-          language: 'en',
-          title: 'title 1 common content',
-          description: 'description 1 common content',
           content: 'content 1 common content',
           created: datetime,
+          description: 'description 1 common content',
+          image_url: 'https://18f.gsa.gov/assets/img/logos/18F-Logo-M.png',
+          language: 'en',
           path: 'http://www.agency.gov/page1.html',
           promote: true,
-          updated: datetime,
-          updated_at: datetime }
+          title: 'title 1 common content',
+          updated_at: datetime,
+          updated: datetime }
       end
       let(:hash2) do
         { _id: 'a2',
-          language: 'en',
-          title: 'title 2 common content',
-          description: 'description 2 common content',
           content: 'other unrelated stuff',
           created: datetime,
+          description: 'description 2 common content',
+          image_url: 'https://search.gov/assets/img/logos/search.png',
+          language: 'en',
           path: 'http://www.agency.gov/page2.html',
           promote: false,
           tags: 'tag1, tag2',
+          title: 'title 2 common content',
           updated_at: datetime }
       end
 
@@ -285,23 +287,25 @@ describe Api::V1::Collections do
         let(:body) { JSON.parse(response.body) }
         let(:result1) do
           {
-            'language' => 'en',
-            'created' => datetime,
-            'path' => 'http://www.agency.gov/page1.html',
-            'title' => 'title 1 common content',
-            'description' => 'description 1 common content',
+            'changed' => datetime,
             'content' => 'content 1 common content',
-            'changed' => datetime
+            'created' => datetime,
+            'description' => 'description 1 common content',
+            'image_url' => 'https://18f.gsa.gov/assets/img/logos/18F-Logo-M.png',
+            'language' => 'en',
+            'path' => 'http://www.agency.gov/page1.html',
+            'title' => 'title 1 common content'
           }
         end
         let(:result2) do
           {
-            'language' => 'en',
+            'changed' => datetime,
             'created' => datetime,
-            'path' => 'http://www.agency.gov/page2.html',
-            'title' => 'title 2 common content',
             'description' => 'description 2 common content',
-            'changed' => datetime
+            'image_url' => 'https://search.gov/assets/img/logos/search.png',
+            'language' => 'en',
+            'path' => 'http://www.agency.gov/page2.html',
+            'title' => 'title 2 common content'
           }
         end
 

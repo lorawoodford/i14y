@@ -176,7 +176,7 @@ describe DocumentSearch do
         # represent the original value stored in the document's source.
         it 'returns the default fields' do
           result = document_search.search.results.first
-          expect(result.keys).to match_array %w[title path created changed language description]
+          expect(result.keys).to match_array %w[title path created changed language description image_url]
         end
 
         context 'when specifying included fields' do
