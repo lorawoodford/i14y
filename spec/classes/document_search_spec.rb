@@ -502,16 +502,17 @@ describe DocumentSearch do
       end
 
       context "when filtering by #{field}" do
-        let(:document_search) { described_class.new(search_options.merge("#{field}": content)) }
+        let(:document_search) { described_class.new(search_options.merge("#{field}": [content])) }
 
         it 'returns matches' do
           expect(document_search_results.total).to eq(1)
-          expect(document_search_results.results.first[field]).to eq(content)
+          field_values = document_search_results.results.pluck(field)
+          expect(field_values).to all include(content)
         end
       end
 
       context "when filtering by a partial #{field} term" do
-        let(:document_search) { described_class.new(search_options.merge("#{field}": content.chop)) }
+        let(:document_search) { described_class.new(search_options.merge("#{field}": [content.chop])) }
 
         it 'does not return partially matching results' do
           expect(document_search_results.total).to eq(0)
@@ -658,12 +659,13 @@ describe DocumentSearch do
         end
       end
 
-      context 'searching by multiple tags' do
+      context 'when searching by multiple tags' do
         let(:document_search) { described_class.new(search_options.merge(query: 'title', tags: %w[york usa])) }
 
-        it 'returns results matching all of those exact tags' do
-          expect(document_search_results.total).to eq(1)
-          expect(document_search_results.results.first['tags']).to match_array(%w[york usa])
+        it 'returns results matching either of those exact tags' do
+          expect(document_search_results.total).to eq(3)
+          tags = document_search_results.results.pluck('tags')
+          expect(tags).to all include('york').or include('usa')
         end
       end
 
