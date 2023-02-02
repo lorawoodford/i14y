@@ -5,12 +5,13 @@ require 'rails_helper'
 describe DocumentSearch do
   let(:query) { 'common' }
   let(:handles) { %w[agency_blogs] }
+  let(:lang) { :en }
   let(:size) { 10 }
   let(:offset) { 0 }
   let(:search_options) do
     {
       handles: handles,
-      language: :en,
+      language: lang,
       query: query,
       size: size,
       offset: offset
@@ -243,7 +244,6 @@ describe DocumentSearch do
 
   context 'when searching across multiple indexes' do
     let(:handles) { %w[agency_blogs other_agency_blogs] }
-    let(:query) { 'common' }
 
     before do
       create_document(common_params, document_repository)
@@ -291,19 +291,28 @@ describe DocumentSearch do
         ].flatten)
       end
 
-      it 'matches 3 out of 4 low freq or missing terms' do
-        document_search = described_class.new(handles: %w[agency_blogs], language: :en, query: 'very low frequency term', size: 10, offset: 0)
-        document_search_results = document_search.search
-        expect(document_search_results.total).to eq(1)
-        document_search = described_class.new(handles: %w[agency_blogs], language: :en, query: 'MISSING low frequency term', size: 10, offset: 0)
-        document_search_results = document_search.search
-        expect(document_search_results.total).to eq(1)
+      context 'with low freq terms' do
+        let(:query) { 'very low frequency term' }
+
+        it 'matches 3 out of 4 low freq terms' do
+          expect(document_search_results.total).to eq(1)
+        end
       end
 
-      it 'matches 2 out of 3 high freq terms' do
-        document_search = described_class.new(handles: %w[agency_blogs], language: :en, query: 'high occurrence everywhere', size: 10, offset: 0)
-        document_search_results = document_search.search
-        expect(document_search_results.total).to eq(80)
+      context 'with missing terms' do
+        let(:query) { 'MISSING low frequency term' }
+
+        it 'matches 3 out of 4 low  missing terms' do
+          expect(document_search_results.total).to eq(1)
+        end
+      end
+
+      context 'with high freq terms' do
+        let(:query) { 'high occurrence everywhere' }
+
+        it 'matches 2 out of 3 high freq terms' do
+          expect(document_search_results.total).to eq(80)
+        end
       end
     end
   end
@@ -363,9 +372,6 @@ describe DocumentSearch do
       let(:query) { 'news memorials' }
 
       before do
-        common_params = { language: 'en', created: DateTime.now, path: 'http://www.agency.gov/page1.html',
-                          title: 'I would prefer a document about seasons than seasoning if I am on a weather site',
-                          description: %q(Some people, when confronted with an information retrieval problem, think "I know, I'll use a stemmer." Now they have two problems.) }
         create_documents([
                            common_params.merge(description: 'jefferson township Memorial new'),
                            common_params.merge(description: 'jefferson township memorials news')
@@ -383,13 +389,12 @@ describe DocumentSearch do
       end
 
       before do
-        common_params = { language: 'en', created: DateTime.now, path: 'http://www.agency.gov/page1.html',
-                          title: 'This mentions stats in the title',
-                          description: %q(Some people, when confronted with an information retrieval problem, think "I know, I'll use a stemmer." Now they have two problems.) }
         create_documents([
-                           common_params,
-                           common_params.merge(tags: 'stats'),
-                           common_params.merge(tags: 'unimportant stats')
+                           common_params.merge(title: 'This mentions stats in the title'),
+                           common_params.merge(title: 'This mentions stats in the title',
+                                               tags: 'stats'),
+                           common_params.merge(title: 'This mentions stats in the title',
+                                               tags: 'unimportant stats')
                          ])
       end
 
@@ -602,7 +607,10 @@ describe DocumentSearch do
     end
   end
 
-  describe 'filtering on language' do
+  context 'when filtering on language' do
+    let(:query) { 'america' }
+    let(:lang) { :fr }
+
     before do
       create_documents([
                          common_params.merge(language: 'en',
@@ -615,8 +623,6 @@ describe DocumentSearch do
     end
 
     it 'returns results from only that language' do
-      document_search = described_class.new(handles: %w[agency_blogs], language: :fr, query: 'america', size: 10, offset: 0)
-      document_search_results = document_search.search
       expect(document_search_results.total).to eq(1)
       expect(document_search_results.results.first['language']).to eq('fr')
     end
@@ -679,14 +685,21 @@ describe DocumentSearch do
     end
 
     context 'with exclusive filtering' do
-      it 'returns results without those exact tags' do
-        document_search = described_class.new(handles: %w[agency_blogs], language: :en, query: 'title', size: 10, offset: 0, ignore_tags: %w[york usa])
-        document_search_results = document_search.search
-        expect(document_search_results.total).to eq(1)
 
-        document_search = described_class.new(handles: %w[agency_blogs], language: :en, query: 'title', size: 10, offset: 0, ignore_tags: %w[york])
-        document_search_results = document_search.search
-        expect(document_search_results.total).to eq(3)
+      context 'when multiple tags' do
+        let(:document_search) { described_class.new(search_options.merge(ignore_tags: %w[york usa])) }
+
+        it 'returns results without those exact tags' do
+          expect(document_search_results.total).to eq(1)
+        end
+      end
+
+      context 'when single tag' do
+        let(:document_search) { described_class.new(search_options.merge(ignore_tags: %w[york])) }
+
+        it 'returns results without that exact tag' do
+          expect(document_search_results.total).to eq(3)
+        end
       end
     end
   end
@@ -799,105 +812,97 @@ describe DocumentSearch do
   end
 
   context 'when filtering on site:' do
-    subject { document_search_results.total }
-
-    let(:common_params) do
-      {
-        language: 'en',
-        title: 'america title 1',
-        description: 'description 1'
-      }
-    end
-
     before do
       create_documents([
-                         common_params.merge(path: 'http://www.agency.gov/dir1/page1.html'),
-                         common_params.merge(path: 'http://www.agency.gov/dir1/dir2/page1.html'),
-                         common_params.merge(path: 'http://www.other.gov/dir2/dir3/page1.html'),
-                         common_params.merge(path: 'http://agency.gov/page1.html')
+                         common_params.merge(title: 'america',
+                                             path: 'http://www.agency.gov/dir1/page1.html'),
+                         common_params.merge(title: 'america',
+                                             path: 'http://www.agency.gov/dir1/dir2/page1.html'),
+                         common_params.merge(title: 'america',
+                                             path: 'http://www.other.gov/dir2/dir3/page1.html'),
+                         common_params.merge(title: 'america',
+                                             path: 'http://agency.gov/page1.html')
                        ])
     end
 
     context 'when two-deep path provided' do
       let(:query) { '(site:www.agency.gov/dir1/dir2) america' }
 
-      it { is_expected.to eq(1) }
+      it { expect(document_search_results.total).to eq(1) }
     end
 
     context 'when one-deep path provided' do
       let(:query) { '(site:www.agency.gov/dir1) america' }
 
-      it { is_expected.to eq(2) }
+      it { expect(document_search_results.total).to eq(2) }
     end
 
     context 'when base path provided' do
       let(:query) { '(site:agency.gov/) america' }
 
-      it { is_expected.to eq(3) }
+      it { expect(document_search_results.total).to eq(3) }
     end
 
     context 'when domain provided' do
       let(:query) { '(site:agency.gov) america' }
 
-      it { is_expected.to eq(3) }
+      it { expect(document_search_results.total).to eq(3) }
     end
 
     context 'when multiple domains and a missing path provided' do
       let(:query) { '(site:agency.gov site:other.gov site:missing.gov/not_there) america' }
 
-      it { is_expected.to eq(4) }
+      it { expect(document_search_results.total).to eq(4) }
     end
 
     context 'when multiple incomplete paths provided' do
       let(:query) { '(site:agency.gov/dir2 site:other.gov/dir1) america' }
 
-      it { is_expected.to be_zero }
+      it { expect(document_search_results.total).to be_zero }
     end
 
     context 'when single incomplete path provided' do
       let(:query) { '(site:www.agency.gov/dir2) america' }
 
-      it { is_expected.to be_zero }
+      it { expect(document_search_results.total).to be_zero }
     end
 
     context 'when single www domain but no query provided' do
       let(:query) { '(site:www.other.gov)' }
 
-      it { is_expected.to eq(1) }
+      it { expect(document_search_results.total).to eq(1) }
     end
 
     context 'when domain but no query provided' do
       let(:query) { 'site:agency.gov' }
 
-      it { is_expected.to eq(3) }
+      it { expect(document_search_results.total).to eq(3) }
     end
 
     context 'when excluding domains' do
-      subject { document_search_results.results.count }
-
       let(:query) { '-site:agency.gov america' }
       let(:document_paths) { document_search_results.results.pluck('path').join(' ') }
 
-      it { is_expected.to eq(1) }
+      it { expect(document_search_results.results.count).to eq(1) }
       it { expect(document_paths).not_to match(/agency.gov/) }
 
       context 'when excluding a path' do
         let(:query) { '-site:www.agency.gov/dir1 america' }
 
-        it { is_expected.to eq(2) }
+        it { expect(document_search_results.results.count).to eq(2) }
         it { expect(document_paths).not_to match(%r{agency.gov/dir1}) }
 
         context 'when the path includes a trailing slash' do
           let(:query) { '-site:www.agency.gov/dir1/ america' }
 
-          it { is_expected.to eq(2) }
+          it { expect(document_search_results.results.count).to eq(2) }
           it { expect(document_paths).not_to match(%r{agency.gov/dir1}) }
         end
 
         context 'when excluding sub-subdirectories' do
           let(:query) { '-site:www.agency.gov/dir1/dir2 america' }
 
-          it { is_expected.to eq(3) }
+          it { expect(document_search_results.results.count).to eq(3) }
           it { expect(document_paths).not_to match(%r{agency.gov/dir1/dir2}) }
         end
       end
@@ -906,13 +911,15 @@ describe DocumentSearch do
         let(:query) { '-site:www.agency.gov/di america' }
 
         it 'does not exclude those results' do
-          is_expected.to eq(4)
+          expect(document_search_results.results.count).to eq(4)
         end
       end
     end
   end
 
   context 'when search term yields no results but a similar spelling does have results' do
+    let(:query) { '99 problemz' }
+
     before do
       create_documents([
                          {
@@ -932,26 +939,33 @@ describe DocumentSearch do
                        ])
     end
 
-    it 'returns results for the close spelling for English' do
-      document_search = described_class.new(handles: %w[agency_blogs], language: :en, query: '99 problemz', size: 10, offset: 0)
-      document_search_results = document_search.search
-      expect(document_search_results.total).to eq(1)
-      expect(document_search_results.suggestion['text']).to eq('99 problems')
-      expect(document_search_results.suggestion['highlighted']).to eq('99 problems')
+    context 'when searching in English' do
+      let(:lang) { :en }
+
+      it 'returns results for the close spelling for English' do
+        expect(document_search_results.total).to eq(1)
+        expect(document_search_results.suggestion['text']).to eq('99 problems')
+        expect(document_search_results.suggestion['highlighted']).to eq('99 problems')
+      end
     end
 
-    it 'returns results for the close spelling for Spanish' do
-      document_search = described_class.new(handles: %w[agency_blogs], language: :es, query: '99 problemz', size: 10, offset: 0)
-      document_search_results = document_search.search
-      expect(document_search_results.total).to eq(1)
-      expect(document_search_results.suggestion['text']).to eq('99 problemas')
-      expect(document_search_results.suggestion['highlighted']).to eq('99 problemas')
+    context 'when searching in Spanish' do
+      let(:lang) { :es }
+
+      it 'returns results for the close spelling for Spanish' do
+        expect(document_search_results.total).to eq(1)
+        expect(document_search_results.suggestion['text']).to eq('99 problemas')
+        expect(document_search_results.suggestion['highlighted']).to eq('99 problemas')
+      end
     end
 
-    it 'does not return results from excluded sites' do
-      document_search = described_class.new(handles: %w[agency_blogs], language: :en, query: '99 problemz -site:agency.gov', size: 10, offset: 0)
-      document_search_results = document_search.search
-      expect(document_search_results.total).to eq(0)
+    context 'when searching in English with an excluded site' do
+      let(:query) { '99 problemz -site:agency.gov' }
+      let(:lang) { :en }
+
+      it 'does not return results from excluded sites' do
+        expect(document_search_results.total).to eq(0)
+      end
     end
   end
 
