@@ -313,25 +313,34 @@ class DocumentQuery
 
             filter do
               bool do
+                must { term language: doc_query.language } if doc_query.language.present?
+
+                minimum_should_match '100%'
+                should do
+                  bool do
+                    if doc_query.included_sites.any?
+                      minimum_should_match 1
+
+                      doc_query.included_sites.each do |site_filter|
+                        should do
+                          bool do
+                            must { term domain_name: site_filter.domain_name }
+                            must { term url_path: site_filter.url_path } if site_filter.url_path.present?
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
+
                 FILTERABLE_TEXT_FIELDS.each do |field|
                   next if doc_query.send(field).blank?
 
-                  doc_query.send(field).each do |field_value|
-                    minimum_should_match 1
-
-                    should { term "#{field}": field_value }
-                  end
-                end
-                must { term language: doc_query.language } if doc_query.language.present?
-
-                if doc_query.included_sites.any?
-                  minimum_should_match 1
-
-                  doc_query.included_sites.each do |site_filter|
-                    should do
-                      bool do
-                        must { term domain_name: site_filter.domain_name }
-                        must { term url_path: site_filter.url_path } if site_filter.url_path.present?
+                  should do
+                    bool do
+                      doc_query.send(field).each do |field_value|
+                        minimum_should_match 1
+                        should { term "#{field}": field_value }
                       end
                     end
                   end
