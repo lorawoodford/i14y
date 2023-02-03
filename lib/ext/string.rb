@@ -1,5 +1,7 @@
+require 'csv'
+
 class String
   def extract_array
-    self.split(',').map(&:strip).map(&:downcase)
+    CSV.parse_line(self).flatten.map(&:strip).map(&:downcase)
   end
 end
