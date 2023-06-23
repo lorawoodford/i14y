@@ -26,6 +26,7 @@ describe DocumentQuery do
                        :changed,
                        :content_type,
                        :created,
+                       :domain_name,
                        :mime_type,
                        :searchgov_custom1,
                        :searchgov_custom2,

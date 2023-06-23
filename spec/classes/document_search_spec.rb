@@ -68,6 +68,11 @@ describe DocumentSearch do
         expect(document_search_results.aggregations).not_to be_nil
       end
 
+      it 'returns domain_name aggregations' do
+        domain_name_agg = document_search_results.aggregations.find { |a| a[:domain_name] }[:domain_name]
+        expect(domain_name_agg).to match(array_including({ agg_key: 'www.agency.gov', doc_count: 1 }))
+      end
+
       context 'when those documents contain a text type aggregation field' do
         before do
           create_documents([

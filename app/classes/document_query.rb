@@ -16,6 +16,7 @@ class DocumentQuery
 
   FILTERABLE_TEXT_FIELDS = %i[audience
                               content_type
+                              domain_name
                               mime_type
                               searchgov_custom1
                               searchgov_custom2
@@ -70,7 +71,13 @@ class DocumentQuery
     set_highlight_options
     search.suggest(:suggestion, suggestion_hash)
     FILTERABLE_TEXT_FIELDS.each do |facet|
-      search.aggregation(facet, aggregation_hash(facet))
+      # domain_name is stored as both a text field (for tokenization of subdomains and such) as well as a keyword field
+      # (for building this aggregation). We've got to do a little extra manipulation here to access the keyword field.
+      if facet == :domain_name
+        search.aggregation(facet, aggregation_hash('domain_name.keyword'))
+      else
+        search.aggregation(facet, aggregation_hash(facet))
+      end
     end
     FILTERABLE_DATE_FIELDS.each do |date_facet|
       search.aggregation(date_facet, date_aggregation_hash(date_facet))
@@ -335,7 +342,9 @@ class DocumentQuery
                 end
 
                 FILTERABLE_TEXT_FIELDS.each do |field|
-                  next if doc_query.send(field).blank?
+                  # domain_name filtering is handled above by the existing included_sites filter and below by the
+                  # excluded_sites filter, so it can be skipped here.
+                  next if field == :domain_name || doc_query.send(field).blank?
 
                   should do
                     bool do
