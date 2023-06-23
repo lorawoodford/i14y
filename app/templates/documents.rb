@@ -214,6 +214,12 @@ class Documents
     json.domain_name do
       json.type('text')
       json.analyzer('domain_name_analyzer')
+      json.fields do
+        json.keyword do
+          json.type('keyword')
+          json.ignore_above(256)
+        end
+      end
     end
   end
 
