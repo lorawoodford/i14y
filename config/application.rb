@@ -40,5 +40,6 @@ module I14y
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
     config.hosts    << "i14y" if ENV["DOCKER"]
+    config.active_support.disable_to_s_conversion = true
   end
 end
