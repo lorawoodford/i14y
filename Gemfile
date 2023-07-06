@@ -1,5 +1,5 @@
 source 'https://rubygems.org'
-gem 'rails', ' ~> 6.1.0'
+gem 'rails', '~> 7.0.0'
 
 gem 'rack-cors', '~> 1.0.5'
 gem 'grape', '~> 1.7.0'
@@ -7,11 +7,11 @@ gem 'jbuilder', '~> 2.7'
 # Virtus is no longer supported. Consider replacing with ActiveModel::Attributes
 gem 'virtus', '~> 1.0'
 
-gem "elasticsearch-persistence", '~> 6.0'
+gem 'elasticsearch-persistence', '~> 6.0'
 gem 'elasticsearch', '~> 6.0'
 gem 'elasticsearch-dsl', '~> 0.1.9'
 
-gem 'newrelic_rpm', '~> 6.15.0'
+gem 'newrelic_rpm', '~> 9.2.2'
 
 gem 'typhoeus', '~> 1.4.0'
 
@@ -36,6 +36,6 @@ end
 
 group :test do
   gem 'simplecov', '~> 0.13.0', require: false
-  gem "codeclimate-test-reporter", '~> 1.0.8', require: nil
+  gem 'codeclimate-test-reporter', '~> 1.0.8', require: nil
   gem 'shoulda', '~> 4.0'
 end
