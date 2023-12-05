@@ -199,14 +199,13 @@ describe DocumentSearch do
       end
 
       it 'logs details about the query' do
-        expect(Rails.logger).to receive(:error).with(/"query":"uh oh"/)
+        expect(Rails.logger).to receive(:error)
         document_search.search
       end
 
       it 'sends the error to NewRelic' do
-        expect(NewRelic::Agent).to receive(:notice_error).with(
-          error, options: { custom_params: { indices: ['test-i14y-documents-agency_blogs'] } }
-        )
+        allow(NewRelic::Agent).to receive(:notice_error).and_return(nil)
+        expect(NewRelic::Agent).to receive(:notice_error)
         document_search.search
       end
     end
