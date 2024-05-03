@@ -7,8 +7,8 @@ gem 'jbuilder', '~> 2.7'
 # Virtus is no longer supported. Consider replacing with ActiveModel::Attributes
 gem 'virtus', '~> 1.0'
 
-gem "elasticsearch-persistence", '~> 6.0'
-gem 'elasticsearch', '~> 6.0'
+gem "elasticsearch-persistence", '~> 7.0'
+gem 'elasticsearch', '~> 7.0'
 gem 'elasticsearch-dsl', '~> 0.1.9'
 
 gem 'newrelic_rpm', '~> 8.12.0'

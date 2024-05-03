@@ -19,7 +19,8 @@ module TestServices
     ES.client.delete_by_query(
       index: index_name,
       q: '*:*',
-      conflicts: 'proceed'
+      conflicts: 'proceed',
+      body: { query: { match_all: {} } }
     )
   end
 

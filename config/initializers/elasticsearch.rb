@@ -24,5 +24,5 @@ if Rails.env.development?
   logger = ActiveSupport::Logger.new(STDERR)
   logger.level = Logger::DEBUG
   logger.formatter = proc { |_s, _d, _p, m| "\e[2m#{m}\n\e[0m" }
-  ES.client.transport.logger = logger
+  ES.client.transport.transport.logger = logger
 end
