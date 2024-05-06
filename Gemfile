@@ -1,21 +1,18 @@
 source 'https://rubygems.org'
 gem 'rails', '~> 7.0.8'
 
-gem 'rack-cors', '~> 1.0.5'
+gem 'elasticsearch-dsl', '~> 0.1.10'
+gem 'elasticsearch-persistence', '~> 7.0'
+gem 'elasticsearch', '~> 7.0'
+gem 'faraday-typhoeus', '~> 1.0'
 gem 'grape', '~> 1.7.0'
 gem 'jbuilder', '~> 2.7'
+gem 'newrelic_rpm', '~> 8.12.0'
+gem 'rack-cors', '~> 1.0.5'
+gem 'rake', '~> 13.0.0'
+gem 'typhoeus', '~> 1.4.0'
 # Virtus is no longer supported. Consider replacing with ActiveModel::Attributes
 gem 'virtus', '~> 1.0'
-
-gem "elasticsearch-persistence", '~> 7.0'
-gem 'elasticsearch', '~> 7.0'
-gem 'elasticsearch-dsl', '~> 0.1.9'
-
-gem 'newrelic_rpm', '~> 8.12.0'
-
-gem 'typhoeus', '~> 1.4.0'
-
-gem 'rake', '~> 13.0.0'
 
 group :development, :test do
   gem 'rspec-rails', '~> 3.7'
@@ -23,7 +20,7 @@ group :development, :test do
   gem 'pry-rails', '~> 0.3'
   gem 'awesome_print', '~> 1.8' #To enable in Pry: https://github.com/awesome-print/awesome_print#pry-integration
   gem 'listen'
-  gem 'puma',  '~> 5.6'
+  gem 'puma', '~> 5.6'
   gem 'debug'
 end
 
@@ -36,6 +33,6 @@ end
 
 group :test do
   gem 'simplecov', '~> 0.13.0', require: false
-  gem "codeclimate-test-reporter", '~> 1.0.8', require: nil
+  gem 'codeclimate-test-reporter', '~> 1.0.8', require: nil
   gem 'shoulda', '~> 4.0'
 end
